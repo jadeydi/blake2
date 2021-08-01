@@ -25,4 +25,8 @@ func TestExampleNewKeyedBlake2S(t *testing.T) {
 	h = New256WithConfig(&Config{Personal: []byte("Shaftoe")}, []byte("Squeamish Ossifrage"))
 	h.Write([]byte("foo"))
 	log.Printf("%x", h.Sum(nil))
+
+	h = New256WithConfig(&Config{}, []byte("Squeamish Ossifrage"))
+	h.Write([]byte("foo"))
+	log.Printf("%x", h.Sum(nil))
 }
