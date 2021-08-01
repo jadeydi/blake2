@@ -4,7 +4,7 @@
 // finalist BLAKE. Like BLAKE or SHA-3, BLAKE2 offers the highest security, yet
 // is fast as MD5 on 64-bit platforms and requires at least 33% less RAM than
 // SHA-2 or SHA-3 on low-end systems.
-package blake2
+package blake2b
 
 import (
 	// #cgo CFLAGS: -O3
@@ -44,7 +44,7 @@ type Tree struct {
 	NodeDepth uint8
 	// Offset of this node within this level of the tree. 0 for the
 	// first, leftmost, leaf, or sequential mode.
-	NodeOffset uint64
+	NodeOffset uint32
 	// Inner hash byte length, in the range [0, 64]. 0 for sequential
 	// mode.
 	InnerHashSize uint8
@@ -98,14 +98,14 @@ func New(config *Config) hash.Hash {
 		}
 		salt := (*[C.BLAKE2B_SALTBYTES]byte)(unsafe.Pointer(&d.param.salt[0]))
 		copy(salt[:], config.Salt)
-		personal := (*[C.BLAKE2B_SALTBYTES]byte)(unsafe.Pointer(&d.param.personal[0]))
+		personal := (*[C.BLAKE2B_PERSONALBYTES]byte)(unsafe.Pointer(&d.param.personal[0]))
 		copy(personal[:], config.Personal)
 
 		if config.Tree != nil {
 			d.param.fanout = C.uint8_t(config.Tree.Fanout)
 			d.param.depth = C.uint8_t(config.Tree.MaxDepth)
 			d.param.leaf_length = C.uint32_t(config.Tree.LeafSize)
-			d.param.node_offset = C.uint64_t(config.Tree.NodeOffset)
+			d.param.node_offset = C.uint32_t(config.Tree.NodeOffset)
 			d.param.node_depth = C.uint8_t(config.Tree.NodeDepth)
 			d.param.inner_length = C.uint8_t(config.Tree.InnerHashSize)
 
@@ -135,11 +135,7 @@ func (d *digest) Size() int {
 }
 
 func (d *digest) Reset() {
-	var key unsafe.Pointer
-	if d.param.key_length > 0 {
-		key = unsafe.Pointer(&d.key[0])
-	}
-	if C.blake2b_init_parametrized(&d.state, &d.param, key) < 0 {
+	if C.blake2b_init_param(&d.state, &d.param) < 0 {
 		panic("blake2: unable to reset")
 	}
 	if d.isLastNode {
@@ -151,13 +147,13 @@ func (d *digest) Sum(buf []byte) []byte {
 	digest := make([]byte, d.Size())
 	// Make a copy of d.state so that caller can keep writing and summing.
 	s := d.state
-	C.blake2b_final(&s, (*C.uint8_t)(&digest[0]), C.uint8_t(d.Size()))
+	C.blake2b_final(&s, unsafe.Pointer(&digest[0]), C.size_t(d.Size()))
 	return append(buf, digest...)
 }
 
 func (d *digest) Write(buf []byte) (int, error) {
 	if len(buf) > 0 {
-		C.blake2b_update(&d.state, (*C.uint8_t)(&buf[0]), C.uint64_t(len(buf)))
+		C.blake2b_update(&d.state, unsafe.Pointer(&buf[0]), C.size_t(len(buf)))
 	}
 	return len(buf), nil
 }

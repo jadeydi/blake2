@@ -1,4 +1,4 @@
-package blake2
+package blake2b
 
 import (
 	"crypto/md5"
