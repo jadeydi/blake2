@@ -145,6 +145,7 @@ extern "C" {
   int blake2s_init( blake2s_state *S, size_t outlen );
   int blake2s_init_key( blake2s_state *S, size_t outlen, const void *key, size_t keylen );
   int blake2s_init_param( blake2s_state *S, const blake2s_param *P );
+  int blake2s_init_parametrized( blake2s_state *S, const blake2s_param *P, const void *key );
   int blake2s_update( blake2s_state *S, const void *in, size_t inlen );
   int blake2s_final( blake2s_state *S, void *out, size_t outlen );
 

@@ -116,6 +116,15 @@ func New256(key []byte) hash.Hash {
 	return d
 }
 
+func New256WithConfig(config *Config, key []byte) hash.Hash {
+	config.Key = key
+	d := New(config)
+	if C.blake2s_init_parametrized(&d.state, &d.param, unsafe.Pointer(&key[0])) < 0 {
+		panic("blake2s: unable to init key")
+	}
+	return d
+}
+
 func (d *digest) BlockSize() int {
 	return d.blockSize
 }

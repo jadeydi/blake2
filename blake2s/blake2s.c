@@ -89,6 +89,27 @@ int blake2s_init_param( blake2s_state *S, const blake2s_param *P )
 }
 
 
+int blake2s_init_parametrized( blake2s_state *S, const blake2s_param *P, const void *key )
+{
+  if ( ( !P->digest_length ) || ( P->digest_length > BLAKE2S_OUTBYTES ) ) return -1;
+
+  if ( P->key_length > BLAKE2S_KEYBYTES ) return -1;
+
+  if( blake2s_init_param( S, P ) < 0 )
+    return 0;
+
+  if (P->key_length > 0)
+  {
+    uint8_t block[BLAKE2S_BLOCKBYTES];
+    memset( block, 0, BLAKE2S_BLOCKBYTES );
+    memcpy( block, key, P->key_length );
+    blake2s_update( S, block, BLAKE2S_BLOCKBYTES );
+    secure_zero_memory( block, BLAKE2S_BLOCKBYTES ); /* Burn the key from stack */
+  }
+  return 0;
+}
+
+
 /* Some sort of default parameter block initialization, for sequential blake2s */
 int blake2s_init( blake2s_state *S, size_t outlen )
 {
